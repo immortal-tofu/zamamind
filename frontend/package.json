@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@zama-fhe/relayer-sdk": "^0.1.0",
     "classnames": "^2.5.1",
     "ethereum-blockies": "^0.1.1",
     "prettier": "^3.6.2",
