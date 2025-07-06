@@ -7,7 +7,7 @@ import {
   type PublicClient,
 } from 'viem';
 import { sepolia } from 'viem/chains';
-import CompiledGame from '../../../artifacts/contracts/Zamamind.sol/Zamamind.json';
+import CompiledGame from '../abi/Zamamind.json';
 import { useFhevm } from './useFhevm';
 import { toHexString } from '../utils';
 import { useWallet } from './useWallet';
