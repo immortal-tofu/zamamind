@@ -9,6 +9,8 @@ contract Zamamind is SepoliaConfig {
     uint8 private constant MAX_COLOR = 8;
     uint8 private constant BITS_PER_COLOR = 3;
 
+    uint private constant TOP_SIZE = 10;
+
     uint8 private constant MASK_3BITS = 0x07;
     uint16 private constant MASK_12BITS = 0x0FFF;
 
@@ -19,13 +21,16 @@ contract Zamamind is SepoliaConfig {
     mapping(uint256 => address) public requests;
 
     mapping(address => Game) public currentGames;
-    mapping(address => uint256) public scores;
+
     mapping(address => euint8) public gameResults;
 
     mapping(address => uint256) public counter;
-    mapping(address => uint256) public limit;
 
-    function startGame() public {
+    mapping(address => uint256) public scores;
+
+    address[TOP_SIZE] public top;
+
+    function start() public {
         require(!FHE.isInitialized(currentGames[msg.sender].game), "No need to create a game");
         euint16 game = FHE.and(FHE.randEuint16(), MASK_12BITS);
         ebool[8] memory colors;
@@ -98,7 +103,45 @@ contract Zamamind is SepoliaConfig {
             uint bonusPoint = ((bonus * (bonus + 1)) / 2) * 100;
             scores[player] += 100 + bonusPoint;
         }
+        _updateTop(player, scores[player]);
         delete currentGames[player];
+    }
+
+    function _updateTop(address player, uint score) internal {
+        address lastAddr = top[TOP_SIZE - 1];
+        uint lastScore = scores[lastAddr]; // 0 if slot empty
+
+        if (score <= lastScore && lastAddr != player) return;
+
+        for (uint i; i < TOP_SIZE; ++i) {
+            if (top[i] == player) {
+                uint j = i;
+                // move upward while the slot above has a smaller score
+                while (j > 0 && scores[top[j - 1]] < score) {
+                    top[j] = top[j - 1];
+                    unchecked {
+                        --j;
+                    }
+                }
+                top[j] = player;
+                return;
+            }
+        }
+
+        /* insert at bottom, then bubble up */
+        top[TOP_SIZE - 1] = player;
+        for (uint k = TOP_SIZE - 1; k > 0; ) {
+            uint prev = k - 1;
+            if (scores[top[prev]] >= score) break;
+            (top[k], top[prev]) = (top[prev], top[k]); // swap
+            unchecked {
+                --k;
+            }
+        }
+    }
+
+    function getTop() public view returns (address[10] memory) {
+        return top;
     }
 
     function getGame() public view returns (euint16) {

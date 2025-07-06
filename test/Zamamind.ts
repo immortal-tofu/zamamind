@@ -44,7 +44,7 @@ describe("Zamamind", function () {
   it("start a game", async function () {
     const gameStarted = await zamamindContract.gameStarted();
     expect(gameStarted).to.eq(false);
-    const tx = await zamamindContract.connect(signers.deployer).startGame();
+    const tx = await zamamindContract.connect(signers.deployer).start();
     await tx.wait();
 
     const gameStarted2 = await zamamindContract.gameStarted();
@@ -52,7 +52,7 @@ describe("Zamamind", function () {
   });
 
   it("solve a game", async function () {
-    const tx = await zamamindContract.connect(signers.alice).startGame();
+    const tx = await zamamindContract.connect(signers.alice).start();
     await tx.wait();
 
     // solve the game;
@@ -84,12 +84,14 @@ describe("Zamamind", function () {
           blocs[j] = 0;
         }
       }
-      console.log(blocs);
+      // console.log(blocs);
       if (correct.length == 4 && correct.every((v) => typeof v == "number")) break;
-      // console.log(results);
     }
 
-    const binCorrect = correct.reverse().reduce((b, c) => b + c.toString(2).padStart(3, "0"), "0b");
+    const binCorrect = correct
+      .slice()
+      .reverse()
+      .reduce((b, c) => b + c.toString(2).padStart(3, "0"), "0b");
     const input = fhevm.createEncryptedInput(zamamindContractAddress, signers.alice.address);
     const { handles, inputProof } = await input.add16(Number(binCorrect)).encrypt();
 
@@ -115,5 +117,109 @@ describe("Zamamind", function () {
 
     const score2 = await zamamindContract.connect(signers.alice).getScore(signers.bob.address);
     expect(score2).to.eq(0);
+  });
+
+  const solve = async (signer: HardhatEthersSigner) => {
+    const tx = await zamamindContract.connect(signer).start();
+    await tx.wait();
+
+    const correct = new Array(4).fill(null);
+    for (let i = 0; i < 8; i += 1) {
+      const input = fhevm.createEncryptedInput(zamamindContractAddress, signer.address);
+      const { handles, inputProof } = await input.add16(repeat3bits4(i)).encrypt();
+      const txGame = await zamamindContract.connect(signer).play(handles[0], inputProof);
+      await txGame.wait();
+
+      const encryptedResults = await zamamindContract.gameResults(signer.address);
+      const decryptedResults = await fhevm.userDecryptEuint(
+        FhevmType.euint8,
+        encryptedResults,
+        zamamindContractAddress,
+        signer,
+      );
+      const results = Number(decryptedResults.toString());
+      const blocs = [];
+      for (let j = 0; j < 4; j += 1) {
+        const bloc = (Number(results.toString()) >> (2 * j)) & 0b11; // isole les 2 bits du bloc i
+        if (bloc === 0b01) {
+          // console.log("VALID COLOR", i, "IN", j);
+          correct[j] = i;
+          blocs[j] = 1;
+        } else {
+          blocs[j] = 0;
+        }
+      }
+      // console.log(blocs);
+      if (correct.length == 4 && correct.every((v) => typeof v == "number")) break;
+    }
+
+    const binCorrect = correct
+      .slice()
+      .reverse()
+      .reduce((b, c) => b + c.toString(2).padStart(3, "0"), "0b");
+    const input = fhevm.createEncryptedInput(zamamindContractAddress, signer.address);
+    const { handles, inputProof } = await input.add16(Number(binCorrect)).encrypt();
+
+    const txGame = await zamamindContract.connect(signer).play(handles[0], inputProof);
+    await txGame.wait();
+    const encryptedResults = await zamamindContract.gameResults(signer.address);
+    const decryptedResults = await fhevm.userDecryptEuint(
+      FhevmType.euint8,
+      encryptedResults,
+      zamamindContractAddress,
+      signer,
+    );
+    expect(decryptedResults).to.eq(85); // 1010101
+
+    const txVictory = await zamamindContract.connect(signer).claim(handles[0], inputProof);
+    await txVictory.wait();
+    await fhevm.awaitDecryptionOracle();
+  };
+
+  it("generate a leaderboard", async function () {
+    // solve the game;
+    await solve(signers.alice);
+    await solve(signers.bob);
+    await solve(signers.bob);
+    await solve(signers.bob);
+    await solve(signers.deployer);
+    await solve(signers.deployer);
+    await solve(signers.deployer);
+    await solve(signers.deployer);
+    const scores: { [key: string]: bigint } = {};
+    scores[signers.alice.address] = await zamamindContract.connect(signers.alice).getScore(signers.alice);
+    scores[signers.bob.address] = await zamamindContract.connect(signers.bob).getScore(signers.bob);
+    scores[signers.deployer.address] = await zamamindContract.connect(signers.deployer).getScore(signers.deployer);
+    const leaderboard = Object.entries(scores) // [ [addr, score], … ]
+      .sort(([, aScore], [, bScore]) => (aScore == bScore ? 0 : aScore > bScore ? -1 : 1))
+      .map(([addr]) => addr);
+
+    const top = await zamamindContract.connect(signers.alice).getTop();
+    // console.log(scores, leaderboard, top);
+    expect(top[0]).to.eq(leaderboard[0]);
+    expect(top[1]).to.eq(leaderboard[1]);
+    expect(top[2]).to.eq(leaderboard[2]);
+
+    expect(top[3]).to.eq("0x0000000000000000000000000000000000000000");
+
+    await solve(signers.alice);
+    await solve(signers.alice);
+    await solve(signers.alice);
+    await solve(signers.alice);
+    await solve(signers.alice);
+    await solve(signers.alice);
+    scores[signers.alice.address] = await zamamindContract.connect(signers.alice).getScore(signers.alice);
+
+    const leaderboard2 = Object.entries(scores) // [ [addr, score], … ]
+      .sort(([, aScore], [, bScore]) => (aScore == bScore ? 0 : aScore > bScore ? -1 : 1))
+      .map(([addr]) => addr);
+
+    const top2 = await zamamindContract.connect(signers.alice).getTop();
+    expect(top2[0]).to.eq(leaderboard2[0]);
+    expect(top2[1]).to.eq(leaderboard2[1]);
+    expect(top2[2]).to.eq(leaderboard2[2]);
+    for (let i = 3; i < 10; i += 1) {
+      expect(top2[i]).to.eq("0x0000000000000000000000000000000000000000");
+    }
   });
 });
