@@ -8,7 +8,7 @@
     <script type="module">
       if ('serviceWorker' in navigator) {
         const reg = await navigator.serviceWorker.register('./sw.js', {
-          scope: '/',
+          scope: window.location.pathname,
         });
         // First page load ≠ cross-origin-isolated (SW not yet controlling)
         // Force a one-time reload when the SW claims the page:
