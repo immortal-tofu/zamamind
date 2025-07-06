@@ -15,7 +15,7 @@ export function Leaderboard() {
 
   const onRefresh = async () => {
     const l = await getTop();
-    console.log(l);
+    // console.log(l);
     const cleanListPromise = l!.map(async (address) => {
       if (Number(address) !== 0) {
         let label: string = address;
@@ -33,7 +33,6 @@ export function Leaderboard() {
     const cleanList = await Promise.all(cleanListPromise);
     setLeaderboard(cleanList);
   };
-  console.log(leaderboard);
 
   return (
     <div className="Leaderboard">

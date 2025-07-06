@@ -32,7 +32,7 @@ export function FhevmProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     initSDK()
       .then(async () => {
-        console.log('SDK loaded');
+        // console.log('SDK loaded');
         const i = await createInstance({
           ...SepoliaConfig,
           network: window.ethereum,
@@ -51,7 +51,7 @@ export function FhevmProvider({ children }: { children: ReactNode }) {
           );
           setEip712(eip);
         }
-        console.log(i);
+        // console.log(i);
         setInstance(i);
       })
       .catch((e) => {

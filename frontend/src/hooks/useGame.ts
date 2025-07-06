@@ -87,7 +87,7 @@ export default function useGame() {
       functionName: 'getTop',
       account,
     });
-    console.log(data, typeof data);
+    // console.log(data, typeof data);
     return data as `0x${string}`[];
   }, [account, isConnected, walletClient]);
 
@@ -99,7 +99,7 @@ export default function useGame() {
       functionName: 'getGame',
       account,
     });
-    console.log(data, typeof data);
+    // console.log(data, typeof data);
     return data as string;
   }, [account, isConnected, walletClient]);
 

@@ -7,7 +7,7 @@
     <title>Vite + React + TS</title>
     <script type="module">
       if ('serviceWorker' in navigator) {
-        const reg = await navigator.serviceWorker.register('/sw.js', {
+        const reg = await navigator.serviceWorker.register('./sw.js', {
           scope: '/',
         });
         // First page load ≠ cross-origin-isolated (SW not yet controlling)
