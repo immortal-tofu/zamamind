@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--  Mastermind-style favicon: 4 pegs on a dark square  -->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 64 64" width="64" height="64">
+  <!-- background -->
+  <rect width="64" height="64" rx="12" fill="#121212"/>
+  
+  <!-- pegs -->
+  <circle cx="20" cy="20" r="10" fill="#e94b35"/>  <!-- red -->
+  <circle cx="44" cy="20" r="10" fill="#ffca3a"/>  <!-- yellow -->
+  <circle cx="20" cy="44" r="10" fill="#1982c4"/>  <!-- blue -->
+  <circle cx="44" cy="44" r="10" fill="#2ec27e"/>  <!-- green -->
+</svg>
