@@ -181,7 +181,7 @@ export function Game() {
                 <>
                   {!refreshable && (
                     <Button onClick={onClaim} disabled={playing !== false}>
-                      Claim the victory!
+                      Get your points!
                     </Button>
                   )}
                   {refreshable && (
