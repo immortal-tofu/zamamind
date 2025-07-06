@@ -1,0 +1,10 @@
+.Button {
+  background: #a00;
+  color: #fff;
+  box-shadow: 5px 5px #bbb;
+}
+
+.Button[disabled] {
+  color: #bbb;
+  background: #f99;
+}

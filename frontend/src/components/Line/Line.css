@@ -1,0 +1,7 @@
+.Line {
+  display: flex;
+  width: 200px;
+  justify-content: space-between;
+  align-items: center;
+  margin: 20px auto;
+}
