@@ -19,7 +19,7 @@ export const useWallet = () => {
           switchChain();
         }
       });
-    window.ethereum.on('chainChanged', (newChainId) => {
+    window.ethereum!.on('chainChanged', (newChainId) => {
       if (newChainId !== CHAIN_ID) {
         setHasNetwork(false);
         switchChain()
