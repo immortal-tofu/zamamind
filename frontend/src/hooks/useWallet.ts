@@ -1,9 +1,46 @@
 import { useState, useCallback, useEffect } from 'react';
 
+const CHAIN_ID = '0xaa36a7'; // = 11155111 (Sepolia)
+
 export const useWallet = () => {
   const [account, setAccount] = useState<`0x${string}` | undefined>(undefined);
   const [isConnected, setIsConnected] = useState(false);
+  const [hasNetwork, setHasNetwork] = useState(false);
 
+  useEffect(() => {
+    window
+      .ethereum!.request<string>({
+        method: 'eth_chainId',
+      })
+      .then((current) => {
+        if (current === CHAIN_ID) {
+          setHasNetwork(true);
+        } else {
+          switchChain();
+        }
+      });
+    window.ethereum.on('chainChanged', (newChainId) => {
+      if (newChainId !== CHAIN_ID) {
+        setHasNetwork(false);
+        switchChain()
+          .then(() => setHasNetwork(true))
+          .catch(() => {});
+      }
+    });
+  });
+
+  const switchChain = async () => {
+    try {
+      await window.ethereum!.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: CHAIN_ID }],
+      });
+      setHasNetwork(true);
+    } catch (e) {
+      console.log(e);
+      setHasNetwork(false);
+    }
+  };
   /**
    * Opens the MetaMask popup and returns the selected address.
    * @returns {Promise<string|null>}
@@ -19,16 +56,14 @@ export const useWallet = () => {
         method: 'eth_requestAccounts',
       });
 
-      const CHAIN_ID = '0xaa36a7'; // = 11155111 (Sepolia)
       const current = await window.ethereum.request<string>({
         method: 'eth_chainId',
       });
 
       if (current !== CHAIN_ID) {
-        await window.ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: CHAIN_ID }],
-        });
+        await switchChain();
+      } else {
+        setHasNetwork(true);
       }
 
       setAccount(selected);
@@ -64,5 +99,5 @@ export const useWallet = () => {
     };
   }, []);
 
-  return { isConnected, account, connect };
+  return { isConnected, account, hasNetwork, switchChain, connect };
 };

@@ -59,10 +59,12 @@ export const Connect = () => {
 };
 
 export const ConnectWrapper = ({ children }: { children: ReactNode }) => {
-  const { isConnected } = useWallet();
-  if (isConnected) {
+  const { isConnected, hasNetwork } = useWallet();
+  if (isConnected && hasNetwork) {
     return children;
+  } else if (!hasNetwork) {
+    return <div>You must be connected on Sepolia.</div>;
   } else {
-    return <div>You must be connected</div>;
+    <div>You must be connected.</div>;
   }
 };
